@@ -20,9 +20,9 @@ Future versions of this package will include polymorphic change/audit log with v
 - $instance->submitForApproval(User $author)
 
 ##Required FK Relationship Tables:
--users (must have an integer id and an email field)
--content_versions? (proposed)
--- id
+- users (must have an integer id and an email field)
+- content_versions? (proposed)
+    - id
 -- object_type
 -- object_id
 -- action (create,update,submit,approve,reject,publish,archive,restore,delete,mark_as_draft)
@@ -51,26 +51,23 @@ would require a method for published objects to go-around if there are new minor
 - created_at timestamp
 - updated_by int(FK:users.id)
 - updated_at timestamp
-- submitted_by int(FK:users.id)
-- submitted_at timestamp
-- approved_by int(FK:users.id)
-- approved_at timestamp
 - published_by int(FK:users.id)
 - published_at timestamp
-- archived_by int(FK:users.id)
-- archived_at timestamp
 
-##Possible Use Case
+##Workflow Summary 
 
-1. User creates a resource (a post, a comment or any Eloquent Model).
-2. The resource is pending and invisible in website (ex. `Post::all()` returns only approved posts).
-3. Moderator decides if the resource will be approved, rejected or postponed.
+1. Author Creates a publishableContent resource which creates a draft version. Articles::all() returns only published articles.
+2. Author Updates a publishableContent resource which creates a minor draft version 2. 
+3. Author can, if need-be, restore minor draft version 1, thereby updating the resource object row and creating draft version 3, which is identical to version 1.
+3. Once author is done making changes to their content they can then submit it for approval.
 
-  1. **Approved**: Resource is now public and queryable.
-  2. **Rejected**: Resource will be excluded from all queries. Rejected resources will be returned only if you scope a query to include them. (scope: `withRejected`)
-  3. **Postponed**: Resource will be excluded from all queries until Moderator decides to approve it.
+  0. **Archived**: Resource is only accessable by using (scope: withArchived )
+  1. **Published**: Resource is now public and queryable.
+  2. **Approved**:  Content resource can now be scheduled for publishing by either author or publisher.
+  3. **Rejected**: Resource will be excluded from all queries. Rejected resources will be returned only if you scope a query to include them. (scope: `withRejected`)
+  4. **Submitted**: Content is submitted to publisher for approval.
+  5. **Draft**: Default State
 
-4. You application is clean.
 
 ##Installation
 
