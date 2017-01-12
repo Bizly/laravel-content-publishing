@@ -1,6 +1,6 @@
 <?php
 
-namespace Hootlex\Moderation;
+namespace Bizly\ContentPublishing;
 
 class Status
 {

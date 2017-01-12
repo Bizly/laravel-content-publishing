@@ -1,6 +1,6 @@
 <?php
 
-namespace Hootlex\Moderation;
+namespace Bizly\ContentPublishing;
 
 use App\User;
 use Carbon\Carbon;
@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 
-class ModerationScope implements Scope
+class ContentPublishingScope implements Scope
 {
     /**
      * All of the extensions to be added to the builder.
@@ -26,7 +26,7 @@ class ModerationScope implements Scope
         'Approve',
         'Reject',
         'Postpone',
-        'Pend'
+        'Pend',
     ];
 
     /**
@@ -40,8 +40,8 @@ class ModerationScope implements Scope
     public function apply(Builder $builder, Model $model)
     {
         $strict = (isset($model::$strictModeration))
-            ? $model::$strictModeration
-            : config('moderation.strict');
+        ? $model::$strictModeration
+        : config('moderation.strict');
 
         if ($strict) {
             $builder->where($model->getQualifiedStatusColumn(), '=', Status::APPROVED);
@@ -68,7 +68,7 @@ class ModerationScope implements Scope
 
         $bindingKey = 0;
 
-        foreach ((array)$query->wheres as $key => $where) {
+        foreach ((array) $query->wheres as $key => $where) {
             if ($this->isModerationConstraint($where, $column)) {
                 $this->removeWhere($query, $key);
 
@@ -81,7 +81,10 @@ class ModerationScope implements Scope
             // Check if where is either NULL or NOT NULL type,
             // if that's the case, don't increment the key
             // since there is no binding for these types
-            if (!in_array($where['type'], ['Null', 'NotNull'])) $bindingKey++;
+            if (!in_array($where['type'], ['Null', 'NotNull'])) {
+                $bindingKey++;
+            }
+
         }
 
     }
@@ -368,7 +371,7 @@ class ModerationScope implements Scope
 
         $update = [
             $builder->getModel()->getStatusColumn() => $status,
-            $builder->getModel()->getModeratedAtColumn() => Carbon::now()
+            $builder->getModel()->getModeratedAtColumn() => Carbon::now(),
         ];
         //if moderated_by in enabled then append it to the update
         if ($moderated_by = $builder->getModel()->getModeratedByColumn()) {

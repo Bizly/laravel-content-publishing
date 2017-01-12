@@ -1,5 +1,5 @@
 # Laravel Content Publishing Workflow
-An Advanced Content Moderation System for Laravel 5.* that facitates content approval workflow.
+An Advanced Content Publishing System for Laravel 5.* that facitates content approval workflow.
 Based on the hootlex/laravel-moderation composer package.
 
 ##Please Note:
@@ -30,14 +30,15 @@ Future versions of this package will extend the polymorphic change/audit log wit
     - user_id
     - major_version int, increments when published
     - minor_version int, increments when created or updated
-    - changes text(json, moderatable_fields as defined in model) Ideally, would only be a delta between the existing and the update - but, that could get overly-complex.
+    - changes text(json, publishable_fields as defined in model) Ideally, would only be a delta between the existing and the update - but, that could get overly-complex.
 > **Note:** only currently-published versions would be available in the target polymorphed table referenced.
-    - would require a method for published objects to go-around if there are new minor versions with getting as an author or a moderator
+    - would require a method for published objects to go-around if there are new minor versions with getting as an author or a publisher
+
 
 ##User Roles??
 - reader default user role, can only consume published content after the `published_at` date has passed.
 - author 
-- moderator 
+- publisher
 
 ###Suggested Methods for User to Handle Permissions in your controller:
 - `isAuthor($object_type,$object_id)` requires override in App's user class
@@ -96,12 +97,12 @@ php artisan vendor:publish --provider="Bizly\ContentPublishing\ContentPublishing
 
 ## Prepare Model
 
-To enable moderation for a model, use the `Bizly\ContentPublishing\Publishable` trait on the model and add the `status`, `content_version_id`, `published_by` and `published_at` columns to your model's table.
+To enable publishing for a model, use the `Bizly\ContentPublishing\Publishable` trait on the model and add the `status`, `content_version_id`, `published_by` and `published_at` columns to your model's table.
 ```php
-use Hootlex\Moderation\Moderatable;
-class Post extends Model
+use Bizly\ContentPublishing;
+class Article extends Model
 {
-    use Moderatable;
+    use PublishableContent;
     ...
 }
 ```
@@ -230,8 +231,8 @@ $article->isSubmitted();
 ##Configuration
 
 ###Global Configuration
-To configuration Moderation package globally you have to edit `config/moderation.php`.
-Inside `moderation.php` you can configure the following:
+To configuration Moderation package globally you have to edit `config/bizly.content-publishing.php`.
+Inside `bizly.content-publishing.php` you can configure the following:
 
 1. `status_column` represents the default column `status` in the database. 
 2. `content_version_id_column` the current version of the model.
@@ -243,7 +244,7 @@ Inside your Model you can define some variables to overwrite **Global Settings**
 
 To overwrite `status` column define:
 ```php
-const PUBLICATION_STATUS = 'publication_status';
+const CONTENT_PUBLISHING_STATUS = 'content_publishing_status';
 ```
 
 To overwrite `published_at` column define:

@@ -1,10 +1,8 @@
 <?php
 
-namespace Hootlex\Moderation;
+namespace Bizly\ContentPublishing;
 
-
-
-trait ModerationQueryBuilder
+trait ContentPublishingQueryBuilder
 {
     /**
      * Get a new query builder that only includes pending resources.
@@ -13,7 +11,7 @@ trait ModerationQueryBuilder
      */
     public static function pending()
     {
-        return (new static)->newQueryWithoutScope(new ModerationScope())->pending();
+        return (new static )->newQueryWithoutScope(new ModerationScope())->pending();
     }
 
     /**
@@ -23,7 +21,7 @@ trait ModerationQueryBuilder
      */
     public static function rejected()
     {
-        return (new static)->newQueryWithoutScope(new ModerationScope())->rejected();
+        return (new static )->newQueryWithoutScope(new ModerationScope())->rejected();
     }
 
     /**
@@ -33,7 +31,7 @@ trait ModerationQueryBuilder
      */
     public static function postponed()
     {
-        return (new static)->newQueryWithoutScope(new ModerationScope())->postponed();
+        return (new static )->newQueryWithoutScope(new ModerationScope())->postponed();
     }
 
     /**
@@ -43,7 +41,7 @@ trait ModerationQueryBuilder
      */
     public static function withPending()
     {
-        return (new static)->newQueryWithoutScope(new ModerationScope())->withPending();
+        return (new static )->newQueryWithoutScope(new ModerationScope())->withPending();
     }
 
     /**
@@ -53,7 +51,7 @@ trait ModerationQueryBuilder
      */
     public static function withRejected()
     {
-        return (new static)->newQueryWithoutScope(new ModerationScope())->withRejected();
+        return (new static )->newQueryWithoutScope(new ModerationScope())->withRejected();
     }
 
     /**
@@ -63,7 +61,7 @@ trait ModerationQueryBuilder
      */
     public static function withPostponed()
     {
-        return (new static)->newQueryWithoutScope(new ModerationScope())->withPostponed();
+        return (new static )->newQueryWithoutScope(new ModerationScope())->withPostponed();
     }
 
     /**
@@ -73,6 +71,6 @@ trait ModerationQueryBuilder
      */
     public static function withAnyStatus()
     {
-        return (new static)->newQueryWithoutScope(new ModerationScope());
+        return (new static )->newQueryWithoutScope(new ModerationScope());
     }
 }

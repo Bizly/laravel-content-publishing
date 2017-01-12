@@ -1,10 +1,10 @@
 <?php
 
-namespace Hootlex\Moderation;
+namespace Bizly\ContentPublishing;
 
 use Illuminate\Support\ServiceProvider;
 
-class ModerationServiceProvider extends ServiceProvider
+class ContentPublishingServiceProvider extends ServiceProvider
 {
     /**
      * Bootstrap the application services.
@@ -14,7 +14,7 @@ class ModerationServiceProvider extends ServiceProvider
     public function boot()
     {
         $this->publishes([
-            __DIR__ . '/config/moderation.php' => config_path('moderation.php'),
+            __DIR__ . '/config/bizly.content-publishing.php' => config_path('bizly.content-publishing.php'),
         ], 'config');
     }
 

@@ -1,8 +1,8 @@
 <?php
 
-namespace Hootlex\Moderation;
+namespace Bizly\ContentPublishing;
 
-trait Moderatable
+trait PublishableContent
 {
     use ModerationQueryBuilder;
 
