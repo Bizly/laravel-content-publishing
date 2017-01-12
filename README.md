@@ -23,16 +23,16 @@ Future versions of this package will include polymorphic change/audit log with v
 - users (must have an integer id and an email field)
 - content_versions? (proposed)
     - id
--- object_type
--- object_id
--- action (create,update,submit,approve,reject,publish,archive,restore,delete,mark_as_draft)
--- date
--- user_id
--- major_version int, increments when published
--- minor_version int, increments when created or updated
--- changes text(json, moderatable_fields as defined in model) Ideally, would only be a delta between the existing and the update - but, that could get overly-complex.
-*Note : only currently-published versions would be available in the target polymorphed table referenced.
-would require a method for published objects to go-around if there are new minor versions with getting as an author or a moderator
+    - object_type
+    - object_id
+    - action (create,update,submit,approve,reject,publish,archive,restore,delete,mark_as_draft)
+    - date
+    - user_id
+    - major_version int, increments when published
+    - minor_version int, increments when created or updated
+    - changes text(json, moderatable_fields as defined in model) Ideally, would only be a delta between the existing and the update - but, that could get overly-complex.
+- *Note : only currently-published versions would be available in the target polymorphed table referenced.
+    - would require a method for published objects to go-around if there are new minor versions with getting as an author or a moderator
 
 ##User Roles??
 - reader default user instance, no class extension
