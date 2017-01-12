@@ -4,26 +4,22 @@ return array(
     |--------------------------------------------------------------------------
     | Status column
     |--------------------------------------------------------------------------
-    */
+     */
     'status_column' => 'status',
 
     /*
     |--------------------------------------------------------------------------
-    | Moderated At column
+    | Published At column
     |--------------------------------------------------------------------------
-    */
-    'moderated_at_column' => 'moderated_at',
+     */
+    'published_at_column' => 'published_at',
 
     /*
     |--------------------------------------------------------------------------
-    | Moderated By column
+    | Published By column
     |--------------------------------------------------------------------------
-    | Moderated by column is disabled by default.
-    | If you want to include the id of the user who moderated a resource set
-    | here the name of the column.
-    | REMEMBER to migrate the database to add this column.
-    */
-    'moderated_by_column' => null,
+     */
+    'published_by_column' => 'published_by',
 
     /*
     |--------------------------------------------------------------------------
@@ -32,6 +28,6 @@ return array(
     | If Strict Moderation is set to true then the default query will return
     | only approved resources.
     | In other case, all resources except Rejected ones, will returned as well.
-    */
+     */
     'strict' => true,
 );

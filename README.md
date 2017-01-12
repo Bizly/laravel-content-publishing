@@ -1,4 +1,4 @@
-# Laravel Content Moderation
+# Laravel Content Publishing Workflow
 An Advanced Content Moderation System for Laravel 5.* that facitates content approval workflow.
 Based on the hootlex/laravel-moderation composer package.
 
@@ -6,15 +6,15 @@ Based on the hootlex/laravel-moderation composer package.
 Future versions of this package will include polymorphic change/audit log with versioning and prior version restoration functionality.
 
 ##Workflow Summary:
-5 : DRAFT : submit for approval (changes to PENDING) | publish, schedule to publish (changes to PUBLISHED, if scheduled sets specified publish date) | archive (changes state to ARCHIVED).
-4 : PENDING : approve or reject (unused at the moment).
-3 : REJECTED : out-of-scope for now.
-2 : APPROVED : publish or schedule to publish (changes to PUBLISHED, if scheduled sets specified publish date). | archive (changes state to ARCHIVED).
-1 : PUBLISHED : mark as draft | archive
-0 : ARCHIVED : publish | mark as draft
+- 5 : DRAFT : submit for approval (changes to PENDING) | publish, schedule to publish (changes to PUBLISHED, if scheduled sets specified publish date) | archive (changes state to ARCHIVED).
+- 4 : PENDING : approve or reject (unused at the moment).
+- 3 : REJECTED : out-of-scope for now.
+- 2 : APPROVED : publish or schedule to publish (changes to PUBLISHED, if scheduled sets specified publish date). | archive (changes state to ARCHIVED).
+- 1 : PUBLISHED : mark as draft | archive
+- 0 : ARCHIVED : publish | mark as draft
 
 ###Methods for Publishable Class
-- Class::create(User $author/$publisher)
+- Class::create(User $user) : user creates content object. (we need both object information & user information to be passed.) 
 - $instance->publish(User $publisher/$author[if approved],$publish_at = now)
 - $instance->approve(User $publisher)
 - $instance->submitForApproval(User $author)
@@ -35,13 +35,13 @@ Future versions of this package will include polymorphic change/audit log with v
     - would require a method for published objects to go-around if there are new minor versions with getting as an author or a moderator
 
 ##User Roles??
-- reader default user instance, no class extension
-- author User class extension using ModeratableContentAuthor trait
-- moderator User class extension using ModeratableContentModerator trait
+- reader default user role, can only consume published content after the `published_at` date has passed.
+- author 
+- moderator 
 
 ###Methods for User
-- isAuthor($object_type,$object_id) requires override in App's user class
-- isPublisher($object_type[from class being published],$object_id)
+- `isAuthor($object_type,$object_id)` requires override in App's user class
+- `isPublisher($object_type[from class being published],$object_id)`
 
 
 
@@ -61,7 +61,7 @@ Future versions of this package will include polymorphic change/audit log with v
 3. Author can, if need-be, restore minor draft version 1, thereby updating the resource object row and creating draft version 3, which is identical to version 1.
 3. Once author is done making changes to their content they can then submit it for approval.
 
-  0. **Archived**: Resource is only accessable by using (scope: withArchived )
+  0. **Archived**: Resource is only accessable by using (scope: `withArchived` )
   1. **Published**: Resource is now public and queryable.
   2. **Approved**:  Content resource can now be scheduled for publishing by either author or publisher.
   3. **Rejected**: Resource will be excluded from all queries. Rejected resources will be returned only if you scope a query to include them. (scope: `withRejected`)
@@ -74,7 +74,7 @@ Future versions of this package will include polymorphic change/audit log with v
 First, install the package through Composer.
 
 ```php
-composer require hootlex/laravel-moderation
+composer require bizly/laravel-content-publishing
 ```
 
 Then include the service provider inside `config/app.php`.

@@ -2,8 +2,6 @@
 
 namespace Hootlex\Moderation;
 
-
-
 trait Moderatable
 {
     use ModerationQueryBuilder;
@@ -27,7 +25,7 @@ trait Moderatable
      */
     public static function approve($id)
     {
-        return (new static)->newQueryWithoutScope(new ModerationScope())->approve($id);
+        return (new static )->newQueryWithoutScope(new ModerationScope())->approve($id);
     }
 
     /**
@@ -39,7 +37,7 @@ trait Moderatable
      */
     public static function reject($id)
     {
-        return (new static)->newQueryWithoutScope(new ModerationScope())->reject($id);
+        return (new static )->newQueryWithoutScope(new ModerationScope())->reject($id);
     }
 
     /**
@@ -51,7 +49,7 @@ trait Moderatable
      */
     public static function postpone($id)
     {
-        return (new static)->newQueryWithoutScope(new ModerationScope())->postpone($id);
+        return (new static )->newQueryWithoutScope(new ModerationScope())->postpone($id);
     }
 
     /**
@@ -61,7 +59,7 @@ trait Moderatable
      */
     public function markApproved()
     {
-        $new = (new static)->newQueryWithoutScope(new ModerationScope())->approve($this->id);
+        $new = (new static )->newQueryWithoutScope(new ModerationScope())->approve($this->id);
         return $this->setRawAttributes($new->attributesToArray());
     }
 
@@ -72,7 +70,7 @@ trait Moderatable
      */
     public function markRejected()
     {
-        $new = (new static)->newQueryWithoutScope(new ModerationScope())->reject($this->id);
+        $new = (new static )->newQueryWithoutScope(new ModerationScope())->reject($this->id);
         return $this->setRawAttributes($new->attributesToArray());
     }
 
@@ -83,7 +81,7 @@ trait Moderatable
      */
     public function markPostponed()
     {
-        $new = (new static)->newQueryWithoutScope(new ModerationScope())->postpone($this->id);
+        $new = (new static )->newQueryWithoutScope(new ModerationScope())->postpone($this->id);
         return $this->setRawAttributes($new->attributesToArray());
     }
 
@@ -94,7 +92,7 @@ trait Moderatable
      */
     public function markPending()
     {
-        $new = (new static)->newQueryWithoutScope(new ModerationScope())->pend($this->id);
+        $new = (new static )->newQueryWithoutScope(new ModerationScope())->pend($this->id);
         return $this->setRawAttributes($new->attributesToArray());
     }
 
@@ -204,7 +202,8 @@ trait Moderatable
      *
      * @return string
      */
-    public function getDates(){
+    public function getDates()
+    {
         return array_merge(parent::getDates(), [$this->getModeratedAtColumn()]);
     }
 }
