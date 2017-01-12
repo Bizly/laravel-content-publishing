@@ -2,11 +2,12 @@
 
 namespace Hootlex\Moderation;
 
-
 class Status
 {
-    const PENDING = 0;
-    const APPROVED = 1;
-    const REJECTED = 2;
-    const POSTPONED = 3;
+    const DRAFTED = 5;
+    const SUBMITTED = 4;
+    const REJECTED = 3;
+    const APPROVED = 2;
+    const PUBLISHED = 1;
+    const ARCHIVED = 0;
 }

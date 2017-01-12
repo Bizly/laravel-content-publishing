@@ -14,7 +14,7 @@ class ModerationServiceProvider extends ServiceProvider
     public function boot()
     {
         $this->publishes([
-            __DIR__.'/config/moderation.php' => config_path('moderation.php')
+            __DIR__ . '/config/moderation.php' => config_path('moderation.php'),
         ], 'config');
     }
 

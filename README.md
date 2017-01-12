@@ -3,11 +3,11 @@ An Advanced Content Moderation System for Laravel 5.* that facitates content app
 Based on the hootlex/laravel-moderation composer package.
 
 ##Please Note:
-Future versions of this package will include polymorphic change/audit log with versioning and prior version restoration functionality.
+Future versions of this package will extend the polymorphic change/audit log with enhanced versioning and version restoration functionality.
 
 ##Workflow Summary:
-- 5 : DRAFT : submit for approval (changes to PENDING) | publish, schedule to publish (changes to PUBLISHED, if scheduled sets specified publish date) | archive (changes state to ARCHIVED).
-- 4 : PENDING : approve or reject (unused at the moment).
+- 5 : DRAFTED : submit for approval (changes to PENDING) | publish, schedule to publish (changes to PUBLISHED, if scheduled sets specified publish date) | archive (changes state to ARCHIVED).
+- 4 : SUBMITTED : approve or reject (unused at the moment).
 - 3 : REJECTED : out-of-scope for now.
 - 2 : APPROVED : publish or schedule to publish (changes to PUBLISHED, if scheduled sets specified publish date). | archive (changes state to ARCHIVED).
 - 1 : PUBLISHED : mark as draft | archive
@@ -31,7 +31,7 @@ Future versions of this package will include polymorphic change/audit log with v
     - major_version int, increments when published
     - minor_version int, increments when created or updated
     - changes text(json, moderatable_fields as defined in model) Ideally, would only be a delta between the existing and the update - but, that could get overly-complex.
-- *Note : only currently-published versions would be available in the target polymorphed table referenced.
+> **Note:** only currently-published versions would be available in the target polymorphed table referenced.
     - would require a method for published objects to go-around if there are new minor versions with getting as an author or a moderator
 
 ##User Roles??
@@ -39,14 +39,15 @@ Future versions of this package will include polymorphic change/audit log with v
 - author 
 - moderator 
 
-###Methods for User
+###Suggested Methods for User to Handle Permissions in your controller:
 - `isAuthor($object_type,$object_id)` requires override in App's user class
-- `isPublisher($object_type[from class being published],$object_id)`
+- `isPublisher($object_type[from class being published],$object_id)` 
 
 
 
 ##Required Table Migration Fields to Implement:
 - status int(0,1,2,3,4,5)
+- content_version_id int(FK:content_versions.id)
 - created_by int(FK:users.id)
 - created_at timestamp
 - updated_by int(FK:users.id)
@@ -54,10 +55,10 @@ Future versions of this package will include polymorphic change/audit log with v
 - published_by int(FK:users.id)
 - published_at timestamp
 
-##Workflow Summary 
+##Workflow Summary:
 
-1. Author Creates a publishableContent resource which creates a draft version. Articles::all() returns only published articles.
-2. Author Updates a publishableContent resource which creates a minor draft version 2. 
+1. Author Creates a `publishableContent` resource which creates a draft version. Articles::all() returns only published articles.
+2. Author Updates a `publishableContent` resource which creates a minor draft version 2. 
 3. Author can, if need-be, restore minor draft version 1, thereby updating the resource object row and creating draft version 3, which is identical to version 1.
 3. Once author is done making changes to their content they can then submit it for approval.
 
@@ -82,20 +83,20 @@ Then include the service provider inside `config/app.php`.
 ```php
 'providers' => [
     ...
-    Hootlex\Moderation\ModerationServiceProvider::class,
+    Bizly\ContentPublishing\ContentPublishingServiceProvider::class,
     ...
 ];
 ```
 Lastly you publish the config file.
 
 ```
-php artisan vendor:publish --provider="Hootlex\Moderation\ModerationServiceProvider" --tag=config
+php artisan vendor:publish --provider="Bizly\ContentPublishing\ContentPublishingServiceProvider" --tag=config
 ```
 
 
 ## Prepare Model
 
-To enable moderation for a model, use the `Hootlex\Moderation\Moderatable` trait on the model and add the `status`, `moderated_by` and `moderated_at` columns to your model's table.
+To enable moderation for a model, use the `Bizly\ContentPublishing\Publishable` trait on the model and add the `status`, `content_version_id`, `published_by` and `published_at` columns to your model's table.
 ```php
 use Hootlex\Moderation\Moderatable;
 class Post extends Model
@@ -105,137 +106,126 @@ class Post extends Model
 }
 ```
 
-Create a migration to add the new columns. [(You can use custom names for the moderation columns)](#configuration)
+Create a migration to add the new columns to an existing table. [(You can use custom names for the content publishing columns)](#configuration)
 
 Example Migration:
 ```php
-class AddModerationColumnsToPostsTable extends Migration
+class AddContentPublishingColumnsToArticlesTable extends Migration
 {
-    /**
-     * Run the migrations.
-     *
-     * @return void
-     */
+
     public function up()
     {
-        Schema::table('posts', function (Blueprint $table) {
-            $table->smallInteger('status')->default(0);
-            $table->dateTime('moderated_at')->nullable();
-            //If you want to track who moderated the Model add 'moderated_by' too.
-            //$table->integer('moderated_by')->nullable()->unsigned();
+        Schema::table('articles', function (Blueprint $table) {
+            $table->smallInteger('status')->default(5); // 5 = Draft State upon creation.
+            $table->integer('content_version_id')->unsigned();
+            $table->integer('published_by')->nullable()->unsigned();
+            $table->dateTime('published_at')->nullable();
+            $table->timestamps; // If you don't already have them, adds: created_at, created_by, updated_at, updated_by cols.
         });
     }
 
-    /**
-     * Reverse the migrations.
-     *
-     * @return void
-     */
     public function down()
     {
-        Schema::table('posts', function(Blueprint $table)
+        Schema::table('articles', function(Blueprint $table)
         {
             $table->dropColumn('status');
-            $table->dropColumn('moderated_at');
-            //$table->dropColumn('moderated_by');
+            $table->dropColumn('content_version_id');
+            $table->dropColumn('published_at');
+            $table->dropColumn('published_by');
         });
     }
 }
 ```
 
-**You are ready to go!**
-
 ##Usage
-> **Note:** In next examples I will use Post model to demonstrate how the query builder works. You can Moderate any Eloquent Model, even User. 
+> **Note:** In next examples I will use Article model to demonstrate how the query builder works. You can Moderate any Eloquent Model, even User. 
 
-###Moderate Models
-You can moderate a model Instance:
+###Submit, Approve, and Publish Models
+You can submit, approve, and publish a model Instance:
 ```php
-$post->markApproved();
 
-$post->markRejected();
+Article::create($user_id, array $article); //Gives author or publisher the ability to create a new draft version of the content. Increments draft version. **Note** This overrides laravel's existing create method for the model.
 
-$post->markPostponed();
+$article->createDraft($user_id, array $newDraftArticle); //Increments the minor version. If the content is currently drafted it will update the row as well. Any other status will go-around and just update.
 
-$post->markPending();
-```
+$article->updateDraft($draft_id, $user_id, array $updates); //Updates the current draft instead of creating a new one. This is particularly useful if your system saves changes on keyup to prevent data creep. If the content is currently drafted it will update the row as well. Any other status will go-around and just update.
 
-or by referencing it's id
-```php
-Post::approve($post->id);
+$article->getLatestDraft(); //Returns the most up-to-date draft version for both authors and publishers.
 
-Post::reject($post->id);
+$article->submitContent($authoring_user_id); //Author submits latest draft version.
 
-Post::postpone($post->id);
+$article->rejectContent($publishing_user_id); //Publisher rejects to content submission. 
+
+$article->approveContent($publishing_user_id); //Publisher approves the content and the author can now publish at will.
+
+$article->publishContent($user_id,$published_at[optional]); //`$published_at` defaults to now, set to a future date to schedule it. `$user_id` can be author if approved and publisher can publish at any point in time. This also creates a major version for the content.
+
+$article->archiveContent($publisher_id); // A publisher can archive content if they want to take it offline quickly for some reason.
+
+$article->getContentVersionHistory(); // An author or publisher can view the change/version log for an article.
+
+$article->restoreContentVersion($content_version_id,$user_id); // An author or publisher can create a new draft based on a historical content version.
+
 ```
 
 or by making a query.
 ```php
-Post::where('title', 'Horse')->approve();
+Article::where('title', 'Horse')->approveContent($publisher_id);
 
-Post::where('title', 'Horse')->reject();
+//Say you have an interface for publishers to view published and archived content submissions:
+Article::where('title', 'Horse')->withArchived()->get();
 
-Post::where('title', 'Horse')->postpone();
+Article::where('title', 'Horse')->withSubmitted()->get();
+
+//For all of them:
+Article::withArchived()->get(); // Published and Archived Articles
+Article::archived()->get(); // Just Archived Articles
+
+Article::withSubmitted()->get(); // Published and Submitted Articles
+Article::submitted()->get(); // Returns all Articles Submitted for Approvel to the Publisher.
+
+//Will return all published and approved Articles
+Article::withApproved()->get(); //Returns the latest approved version from the content_versions table. As well as the current version of any published Articles.
+Article::approved()->get(); // Just returns the latest approved version from the content_versions table for each article.
+
+Article::latestDrafts(); //Returns the latest version from the content_versions table.
+
 ```
 
-###Query Models
-By default only Approved models will be returned on queries. To change this behavior check the [configuration](#configuration).
-
-#####To query the Approved Posts, run your queries as always.
+#####To query the Published Articles, run your queries as always.
 ```php
-//it will return all Approved Posts
-Post::all();
+//it will return all Published Articles
+Article::all();
 
-//it will return Approved Posts where title is Horse
-Post::where('title', 'Horse')->get();
+//it will return Published Articles where title is Horse
+Article::where('title', 'Horse')->get();
 ```
-#####Query pending or rejected models.
-```php
-//it will return all Pending Posts
-Post::pending()->get();
 
-//it will return all Rejected Posts
-Post::rejected()->get();
-
-//it will return all Postponed Posts
-Post::postponed()->get();
-
-//it will return Approved and Pending Posts
-Post::withPending()->get();
-
-//it will return Approved and Rejected Posts
-Post::withRejected()->get();
-
-//it will return Approved and Postponed Posts
-Post::withPostponed()->get();
-```
 #####Query ALL models
 ```php
-//it will return all Posts
-Post::withAnyStatus()->get();
+//it will return all Articles
+Articles::withAnyStatus()->get();
 
-//it will return all Posts where title is Horse
-Post::withAnyStatus()->where('title', 'Horse')->get();
+//it will return all Articles where title is Horse
+Articles::withAnyStatus()->where('title', 'Horse')->get();
 ```
 
 ###Model Status
-To check the status of a model there are 3 helper methods which return a boolean value.
+To check the status of a model there are helper methods which return a boolean value.
 ```php
-//check if a model is pending
-$post->isPending();
+//check if a model is published
+$article->isPublished();
 
 //check if a model is approved
-$post->isApproved();
+$article->isApproved();
 
 //check if a model is rejected
-$post->isRejected();
+$article->isRejected();
 
-//check if a model is rejected
-$post->isPostponed();
+//check if a model is submitted
+$article->isSubmitted();
+
 ```
-
-##Strict Moderation
-Strict Moderation means that only Approved resource will be queried. To query Pending resources along with Approved you have to disable Strict Moderation. See how you can do this in the [configuration](#configuration).
 
 ##Configuration
 
@@ -243,30 +233,25 @@ Strict Moderation means that only Approved resource will be queried. To query Pe
 To configuration Moderation package globally you have to edit `config/moderation.php`.
 Inside `moderation.php` you can configure the following:
 
-1. `status_column` represents the default column 'status' in the database. 
-2. `moderated_at_column` represents the default column 'moderated_at' in the database.
-2. `moderated_by_column` represents the default column 'moderated_by' in the database.
-3. `strict` represents [*Strict Moderation*](#strict-moderation).
+1. `status_column` represents the default column `status` in the database. 
+2. `content_version_id_column` the current version of the model.
+2. `approved_at_column` represents the default column `approved_at` in the database.
+2. `approved_by_column` represents the default column `approved_by` in the database.
 
 ###Model Configuration
 Inside your Model you can define some variables to overwrite **Global Settings**.
 
 To overwrite `status` column define:
 ```php
-const MODERATION_STATUS = 'moderation_status';
+const PUBLICATION_STATUS = 'publication_status';
 ```
 
-To overwrite `moderated_at` column define:
+To overwrite `published_at` column define:
 ```php
-const MODERATED_AT = 'mod_at';
+const PUBLISHED_AT = 'pub_at';
 ```
 
-To overwrite `moderated_by` column define:
+To overwrite `published_by` column define:
 ```php
-const MODERATED_BY = 'mod_by';
-```
-
-To enable or disable [Strict Moderation](#strict-moderation):
-```php
-public static $strictModeration = true;
+const PUBLISHED_BY = 'pub_by';
 ```
