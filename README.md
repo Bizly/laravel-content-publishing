@@ -139,7 +139,7 @@ class AddContentPublishingColumnsToArticlesTable extends Migration
 ```
 
 ##Usage
-> **Note:** In next examples I will use Article model to demonstrate how the query builder works. You can Moderate any Eloquent Model, even User. 
+> **Note:** In next examples I will use Article model to demonstrate how the query builder works. You can Publish any Eloquent Model in your Laravel App.
 
 ###Submit, Approve, and Publish Models
 You can submit, approve, and publish a model Instance:
@@ -231,7 +231,7 @@ $article->isSubmitted();
 ##Configuration
 
 ###Global Configuration
-To configuration Moderation package globally you have to edit `config/bizly.content-publishing.php`.
+To configure the Bizly Content Publishing package globally you have to edit `config/bizly.content-publishing.php`.
 Inside `bizly.content-publishing.php` you can configure the following:
 
 1. `status_column` represents the default column `status` in the database. 
