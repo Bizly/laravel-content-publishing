@@ -1,7 +1,64 @@
-# Laravel Moderation [![Build Status](https://travis-ci.org/hootlex/laravel-moderation.svg?branch=v1.0.8)](https://travis-ci.org/hootlex/laravel-moderation) [![Version](https://img.shields.io/packagist/v/hootlex/laravel-moderation.svg?style=flat)](https://packagist.org/packages/hootlex/laravel-moderation)  [![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat)](LICENSE)
-A simple Moderation System for Laravel 5.* that allows you to Approve or Reject resources like posts, comments, users, etc.
+# Laravel Content Moderation
+An Advanced Content Moderation System for Laravel 5.* that facitates content approval workflow.
+Based on the hootlex/laravel-moderation composer package.
 
-Keep your application pure by preventing offensive, irrelevant, or insulting content.
+##Please Note:
+Future versions of this package will include polymorphic change/audit log with versioning and prior version restoration functionality.
+
+##Workflow Summary:
+5 : DRAFT : submit for approval (changes to PENDING) | publish, schedule to publish (changes to PUBLISHED, if scheduled sets specified publish date) | archive (changes state to ARCHIVED).
+4 : PENDING : approve or reject (unused at the moment).
+3 : REJECTED : out-of-scope for now.
+2 : APPROVED : publish or schedule to publish (changes to PUBLISHED, if scheduled sets specified publish date). | archive (changes state to ARCHIVED).
+1 : PUBLISHED : mark as draft | archive
+0 : ARCHIVED : publish | mark as draft
+
+###Methods for Publishable Class
+- Class::create(User $author/$publisher)
+- $instance->publish(User $publisher/$author[if approved],$publish_at = now)
+- $instance->approve(User $publisher)
+- $instance->submitForApproval(User $author)
+
+##Required FK Relationship Tables:
+-users (must have an integer id and an email field)
+-content_versions? (proposed)
+-- id
+-- object_type
+-- object_id
+-- action (create,update,submit,approve,reject,publish,archive,restore,delete,mark_as_draft)
+-- date
+-- user_id
+-- major_version int, increments when published
+-- minor_version int, increments when created or updated
+-- changes text(json, moderatable_fields as defined in model) Ideally, would only be a delta between the existing and the update - but, that could get overly-complex.
+*Note : only currently-published versions would be available in the target polymorphed table referenced.
+would require a method for published objects to go-around if there are new minor versions with getting as an author or a moderator
+
+##User Roles??
+- reader default user instance, no class extension
+- author User class extension using ModeratableContentAuthor trait
+- moderator User class extension using ModeratableContentModerator trait
+
+###Methods for User
+- isAuthor($object_type,$object_id) requires override in App's user class
+- isPublisher($object_type[from class being published],$object_id)
+
+
+
+##Required Table Migration Fields to Implement:
+- status int(0,1,2,3,4,5)
+- created_by int(FK:users.id)
+- created_at timestamp
+- updated_by int(FK:users.id)
+- updated_at timestamp
+- submitted_by int(FK:users.id)
+- submitted_at timestamp
+- approved_by int(FK:users.id)
+- approved_at timestamp
+- published_by int(FK:users.id)
+- published_at timestamp
+- archived_by int(FK:users.id)
+- archived_at timestamp
 
 ##Possible Use Case
 
