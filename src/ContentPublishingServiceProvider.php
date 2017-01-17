@@ -18,9 +18,9 @@ class ContentPublishingServiceProvider extends ServiceProvider
         ], 'config');
 
         //TODO: Add Necessary migrations for versioning here:
-        $this->publishes([
-            base_path('vendor/bizly/laravel-content-publishing/database/migrations') => base_path('database/migrations'),
-        ], 'migrations');
+        // $this->publishes([
+        //     base_path('vendor/bizly/laravel-content-publishing/database/migrations') => base_path('database/migrations'),
+        // ], 'migrations');
 
     }
 
