@@ -439,7 +439,7 @@ class ContentPublishingScope implements Scope
      *
      * @return bool|int
      */
-    private function updateContentPublishingStatus(Builder $builder, $id, $status, $date)
+    private function updateContentPublishingStatus(Builder $builder, $id, $status, $date = null)
     {
 
         //If $id parameter is passed then update the specified model
