@@ -331,7 +331,7 @@ class ContentPublishingScope implements Scope
     {
         $builder->macro('reject', function (Builder $builder, $id = null) {
             //Can only reject submitted resources.
-            $builder->submitted();
+            $builder->withAnyStatus();
             return $this->updateContentPublishingStatus($builder, $id, Status::REJECTED);
 
         });
@@ -348,7 +348,7 @@ class ContentPublishingScope implements Scope
     {
         $builder->macro('approve', function (Builder $builder, $id = null) {
             //Can only approve submitted resources.
-            $builder->submitted();
+            $builder->withAnyStatus();
             return $this->updateContentPublishingStatus($builder, $id, Status::APPROVED);
         });
     }
@@ -364,7 +364,7 @@ class ContentPublishingScope implements Scope
     {
         $builder->macro('publish', function (Builder $builder, $id = null) {
             //Can only publish approved resources.
-            $builder->approved();
+            $builder->withAnyStatus();
             return $this->updateContentPublishingStatus($builder, $id, Status::PUBLISHED);
         });
     }
