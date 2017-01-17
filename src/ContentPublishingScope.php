@@ -16,17 +16,22 @@ class ContentPublishingScope implements Scope
      * @var array
      */
     protected $extensions = [
-        'WithPending',
+        'WithDrafted',
+        'WithSubmitted',
         'WithRejected',
-        'WithPostponed',
+        'WithApproved',
+        'WithArchived',
         'WithAnyStatus',
-        'Pending',
+        'Drafted',
+        'Submitted',
         'Rejected',
-        'Postponed',
-        'Approve',
+        'Approved',
+        'Archived',
+        'Submit',
         'Reject',
-        'Postpone',
-        'Pend',
+        'Approve',
+        'Publish',
+        'Archive',
     ];
 
     /**
@@ -39,15 +44,8 @@ class ContentPublishingScope implements Scope
      */
     public function apply(Builder $builder, Model $model)
     {
-        $strict = (isset($model::$strictModeration))
-        ? $model::$strictModeration
-        : config('moderation.strict');
-
-        if ($strict) {
-            $builder->where($model->getQualifiedStatusColumn(), '=', Status::APPROVED);
-        } else {
-            $builder->where($model->getQualifiedStatusColumn(), '!=', Status::REJECTED);
-        }
+        //Only return published resources by default:
+        $builder->where($model->getQualifiedStatusColumn(), Status::PUBLISHED);
 
         $this->extend($builder);
     }
@@ -69,7 +67,7 @@ class ContentPublishingScope implements Scope
         $bindingKey = 0;
 
         foreach ((array) $query->wheres as $key => $where) {
-            if ($this->isModerationConstraint($where, $column)) {
+            if ($this->isContentPublishingConstraint($where, $column)) {
                 $this->removeWhere($query, $key);
 
                 // Here SoftDeletingScope simply removes the where
@@ -102,28 +100,44 @@ class ContentPublishingScope implements Scope
             $this->{"add{$extension}"}($builder);
         }
 
-        $builder->onDelete(function (Builder $builder) {
-            $column = $builder->getModel()->getModeratedAtColumn();
+        // $builder->onDelete(function (Builder $builder) {
+        //     $column = $builder->getModel()->getPublishedAtColumn();
 
-            return $builder->update([
-                $column => $builder->getModel()->freshTimestampString(),
-            ]);
-        });
+        //     return $builder->update([
+        //         $column => $builder->getModel()->freshTimestampString(),
+        //     ]);
+        // });
     }
 
     /**
-     * Add the with-pending extension to the builder.
+     * Add the with-drafted extension to the builder.
      *
      * @param  \Illuminate\Database\Eloquent\Builder $builder
      *
      * @return void
      */
-    protected function addWithPending(Builder $builder)
+    protected function addWithDrafted(Builder $builder)
     {
-        $builder->macro('withPending', function (Builder $builder) {
+        $builder->macro('withDrafted', function (Builder $builder) {
             $this->remove($builder, $builder->getModel());
 
-            return $builder->whereIN($this->getStatusColumn($builder), [Status::APPROVED, Status::PENDING]);
+            return $builder->whereIN($this->getStatusColumn($builder), [Status::PUBLISHED, Status::DRAFTED]);
+        });
+    }
+
+    /**
+     * Add the with-submitted extension to the builder.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder $builder
+     *
+     * @return void
+     */
+    protected function addWithSubmitted(Builder $builder)
+    {
+        $builder->macro('withSubmitted', function (Builder $builder) {
+            $this->remove($builder, $builder->getModel());
+
+            return $builder->whereIN($this->getStatusColumn($builder), [Status::PUBLISHED, Status::SUBMITTED]);
         });
     }
 
@@ -140,24 +154,39 @@ class ContentPublishingScope implements Scope
             $this->remove($builder, $builder->getModel());
 
             return $builder->whereIN($this->getStatusColumn($builder),
-                [Status::APPROVED, Status::REJECTED]);
+                [Status::PUBLISHED, Status::REJECTED]);
         });
     }
 
     /**
-     * Add the with-postpone extension to the builder.
+     * Add the with-approved extension to the builder.
      *
      * @param  \Illuminate\Database\Eloquent\Builder $builder
      *
      * @return void
      */
-    protected function addWithPostponed(Builder $builder)
+    protected function addWithApproved(Builder $builder)
     {
-        $builder->macro('withPostponed', function (Builder $builder) {
+        $builder->macro('withApproved', function (Builder $builder) {
             $this->remove($builder, $builder->getModel());
 
-            return $builder->whereIN($this->getStatusColumn($builder),
-                [Status::APPROVED, Status::POSTPONED]);
+            return $builder->whereIN($this->getStatusColumn($builder), [Status::PUBLISHED, Status::APPROVED]);
+        });
+    }
+
+    /**
+     * Add the with-archived extension to the builder.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder $builder
+     *
+     * @return void
+     */
+    protected function addWithArchived(Builder $builder)
+    {
+        $builder->macro('withArchived', function (Builder $builder) {
+            $this->remove($builder, $builder->getModel());
+
+            return $builder->whereIN($this->getStatusColumn($builder), [Status::PUBLISHED, Status::ARCHIVED]);
         });
     }
 
@@ -177,20 +206,40 @@ class ContentPublishingScope implements Scope
     }
 
     /**
-     * Add the Pending extension to the builder.
+     * Add the Drafted extension to the builder.
      *
      * @param  \Illuminate\Database\Eloquent\Builder $builder
      *
      * @return void
      */
-    protected function addPending(Builder $builder)
+    protected function addDrafted(Builder $builder)
     {
-        $builder->macro('pending', function (Builder $builder) {
+        $builder->macro('drafted', function (Builder $builder) {
             $model = $builder->getModel();
 
             $this->remove($builder, $model);
 
-            $builder->where($model->getQualifiedStatusColumn(), '=', Status::PENDING);
+            $builder->where($model->getQualifiedStatusColumn(), Status::DRAFTED);
+
+            return $builder;
+        });
+    }
+
+    /**
+     * Add the Submitted extension to the builder.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder $builder
+     *
+     * @return void
+     */
+    protected function addSubmitted(Builder $builder)
+    {
+        $builder->macro('submitted', function (Builder $builder) {
+            $model = $builder->getModel();
+
+            $this->remove($builder, $model);
+
+            $builder->where($model->getQualifiedStatusColumn(), Status::SUBMITTED);
 
             return $builder;
         });
@@ -210,44 +259,64 @@ class ContentPublishingScope implements Scope
 
             $this->remove($builder, $model);
 
-            $builder->where($model->getQualifiedStatusColumn(), '=', Status::REJECTED);
+            $builder->where($model->getQualifiedStatusColumn(), Status::REJECTED);
 
             return $builder;
         });
     }
 
     /**
-     * Add the Postponed extension to the builder.
+     * Add the Approved extension to the builder.
      *
      * @param  \Illuminate\Database\Eloquent\Builder $builder
      *
      * @return void
      */
-    protected function addPostponed(Builder $builder)
+    protected function addApproved(Builder $builder)
     {
-        $builder->macro('postponed', function (Builder $builder) {
+        $builder->macro('approved', function (Builder $builder) {
             $model = $builder->getModel();
 
             $this->remove($builder, $model);
 
-            $builder->where($model->getQualifiedStatusColumn(), '=', Status::POSTPONED);
+            $builder->where($model->getQualifiedStatusColumn(), Status::APPROVED);
 
             return $builder;
         });
     }
 
     /**
-     * Add the Approve extension to the builder.
+     * Add the Archived extension to the builder.
      *
      * @param  \Illuminate\Database\Eloquent\Builder $builder
      *
      * @return void
      */
-    protected function addApprove(Builder $builder)
+    protected function addArchived(Builder $builder)
     {
-        $builder->macro('approve', function (Builder $builder, $id = null) {
+        $builder->macro('archived', function (Builder $builder) {
+            $model = $builder->getModel();
+
+            $this->remove($builder, $model);
+
+            $builder->where($model->getQualifiedStatusColumn(), Status::ARCHIVED);
+
+            return $builder;
+        });
+    }
+
+    /**
+     * Add the Submit extension to the builder.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder $builder
+     *
+     * @return void
+     */
+    protected function addSubmit(Builder $builder)
+    {
+        $builder->macro('submit', function (Builder $builder, $id = null) {
             $builder->withAnyStatus();
-            return $this->updateModerationStatus($builder, $id, Status::APPROVED);
+            return $this->updateContentPublishingStatus($builder, $id, Status::SUBMITTED);
         });
     }
 
@@ -261,44 +330,62 @@ class ContentPublishingScope implements Scope
     protected function addReject(Builder $builder)
     {
         $builder->macro('reject', function (Builder $builder, $id = null) {
-            $builder->withAnyStatus();
-            return $this->updateModerationStatus($builder, $id, Status::REJECTED);
+            //Can only reject submitted resources.
+            $builder->submitted();
+            return $this->updateContentPublishingStatus($builder, $id, Status::REJECTED);
 
         });
     }
 
     /**
-     * Add the Postpone extension to the builder.
+     * Add the Approve extension to the builder.
      *
      * @param  \Illuminate\Database\Eloquent\Builder $builder
      *
      * @return void
      */
-    protected function addPostpone(Builder $builder)
+    protected function addApprove(Builder $builder)
     {
-        $builder->macro('postpone', function (Builder $builder, $id = null) {
-            $builder->withAnyStatus();
-            return $this->updateModerationStatus($builder, $id, Status::POSTPONED);
+        $builder->macro('approve', function (Builder $builder, $id = null) {
+            //Can only approve submitted resources.
+            $builder->submitted();
+            return $this->updateContentPublishingStatus($builder, $id, Status::APPROVED);
         });
     }
 
     /**
-     * Add the Postpone extension to the builder.
+     * Add the Publish extension to the builder.
      *
      * @param  \Illuminate\Database\Eloquent\Builder $builder
      *
      * @return void
      */
-    protected function addPend(Builder $builder)
+    protected function addPublish(Builder $builder)
     {
-        $builder->macro('pend', function (Builder $builder, $id = null) {
-            $builder->withAnyStatus();
-            return $this->updateModerationStatus($builder, $id, Status::PENDING);
+        $builder->macro('publish', function (Builder $builder, $id = null) {
+            //Can only publish approved resources.
+            $builder->approved();
+            return $this->updateContentPublishingStatus($builder, $id, Status::PUBLISHED);
         });
     }
 
     /**
-     * Get the "deleted at" column for the builder.
+     * Add the Archive extension to the builder.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder $builder
+     *
+     * @return void
+     */
+    protected function addArchive(Builder $builder)
+    {
+        $builder->macro('archive', function (Builder $builder, $id = null) {
+            $builder->withAnyStatus();
+            return $this->updateContentPublishingStatus($builder, $id, Status::ARCHIVED);
+        });
+    }
+
+    /**
+     * Get the status column for the builder.
      *
      * @param  \Illuminate\Database\Eloquent\Builder $builder
      *
@@ -352,42 +439,46 @@ class ContentPublishingScope implements Scope
      *
      * @return bool|int
      */
-    private function updateModerationStatus(Builder $builder, $id, $status)
+    private function updateContentPublishingStatus(Builder $builder, $id, $status, $date)
     {
 
         //If $id parameter is passed then update the specified model
         if ($id) {
             $model = $builder->find($id);
             $model->{$model->getStatusColumn()} = $status;
-            $model->{$model->getModeratedAtColumn()} = Carbon::now();
-            //if moderated_by in enabled then append it to the update
-            if ($moderated_by = $model->getModeratedByColumn()) {
-                $model->{$moderated_by} = \Auth::user()->getKey();
+
+            // Only set published_at and published_by if the content is being published.
+            if ($status == Status::PUBLISHED) {
+                $model->{$model->getPublishedAtColumn()} = $date ?? Carbon::now();
+                $model->{$model->getPublishedByColumn()} = \Auth::user()->getKey();
             }
 
             $model->save();
             return $model;
         }
 
+        // For multiple entities:
         $update = [
             $builder->getModel()->getStatusColumn() => $status,
-            $builder->getModel()->getModeratedAtColumn() => Carbon::now(),
         ];
-        //if moderated_by in enabled then append it to the update
-        if ($moderated_by = $builder->getModel()->getModeratedByColumn()) {
-            $update[$builder->getModel()->getModeratedByColumn()] = \Auth::user()->getKey();
+
+        // Only set published_at and published_by if the content is being published.
+        if ($status == Status::PUBLISHED) {
+            $update[$builder->getModel()->getPublishedAtColumn()] = $date ?? Carbon::now();
+            $update[$builder->getModel()->getPublishedByColumn()] = \Auth::user()->getKey();
         }
+
         return $builder->update($update);
     }
 
     /**
-     * Determine if the given where clause is a moderation constraint.
+     * Determine if the given where clause is a content publishing constraint.
      *
      * @param  array $where
      * @param  string $column
      * @return bool
      */
-    protected function isModerationConstraint(array $where, $column)
+    protected function isContentPublishingConstraint(array $where, $column)
     {
         return $where['column'] == $column;
     }

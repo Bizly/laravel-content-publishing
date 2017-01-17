@@ -4,20 +4,44 @@ namespace Bizly\ContentPublishing;
 
 trait PublishableContent
 {
-    use ModerationQueryBuilder;
+    use ContentPublishingQueryBuilder;
 
     /**
-     * Boot the soft deleting trait for a model.
+     * Boot the publishable content trait for a model.
      *
      * @return void
      */
-    public static function bootModeratable()
+    public static function bootPublishableContent()
     {
-        static::addGlobalScope(new ModerationScope);
+        static::addGlobalScope(new ContentPublishingScope);
     }
 
     /**
-     * Change resource status to Approved
+     * Submit resource for approval.
+     *
+     * @param $id
+     *
+     * @return mixed
+     */
+    public static function submit($id)
+    {
+        return (new static )->newQueryWithoutScope(new ContentPublishingScope())->submit($id);
+    }
+
+    /**
+     * Reject the submitted resource
+     *
+     * @param $id
+     *
+     * @return mixed
+     */
+    public static function reject($id)
+    {
+        return (new static )->newQueryWithoutScope(new ContentPublishingScope())->reject($id);
+    }
+
+    /**
+     * Approve the submitted resource
      *
      * @param $id
      *
@@ -25,89 +49,86 @@ trait PublishableContent
      */
     public static function approve($id)
     {
-        return (new static )->newQueryWithoutScope(new ModerationScope())->approve($id);
+        return (new static )->newQueryWithoutScope(new ContentPublishingScope())->approve($id);
     }
 
     /**
-     * Change resource status to Rejected
-     *
-     * @param null $id
+     * Submit a model instance
      *
      * @return mixed
      */
-    public static function reject($id)
+    public function submitContent()
     {
-        return (new static )->newQueryWithoutScope(new ModerationScope())->reject($id);
-    }
-
-    /**
-     * Change resource status to Postpone
-     *
-     * @param null $id
-     *
-     * @return mixed
-     */
-    public static function postpone($id)
-    {
-        return (new static )->newQueryWithoutScope(new ModerationScope())->postpone($id);
-    }
-
-    /**
-     * Change Instance's status to Approved
-     *
-     * @return mixed
-     */
-    public function markApproved()
-    {
-        $new = (new static )->newQueryWithoutScope(new ModerationScope())->approve($this->id);
+        $new = (new static )->newQueryWithoutScope(new ContentPublishingScope())->submit($this->id);
         return $this->setRawAttributes($new->attributesToArray());
     }
 
     /**
-     * Change Instance's status to Rejected
+     * Reject a submitted model instance.
      *
      * @return mixed
      */
-    public function markRejected()
+    public function rejectContent()
     {
-        $new = (new static )->newQueryWithoutScope(new ModerationScope())->reject($this->id);
+        $new = (new static )->newQueryWithoutScope(new ContentPublishingScope())->reject($this->id);
         return $this->setRawAttributes($new->attributesToArray());
     }
 
     /**
-     * Change Instance's status to Postponed
+     * Approve a submitted model instance
      *
      * @return mixed
      */
-    public function markPostponed()
+    public function approveContent()
     {
-        $new = (new static )->newQueryWithoutScope(new ModerationScope())->postpone($this->id);
+        $new = (new static )->newQueryWithoutScope(new ContentPublishingScope())->approve($this->id);
         return $this->setRawAttributes($new->attributesToArray());
     }
 
     /**
-     * Change Instance's status to Pending
+     * Publish an approved model instance
      *
      * @return mixed
      */
-    public function markPending()
+    public function publishContent($publish_at)
     {
-        $new = (new static )->newQueryWithoutScope(new ModerationScope())->pend($this->id);
+        $new = (new static )->newQueryWithoutScope(new ContentPublishingScope())->publish($this->id, $publish_at);
         return $this->setRawAttributes($new->attributesToArray());
     }
 
     /**
-     * Determine if the model instance has been approved.
+     * Archive a model instance
+     *
+     * @return mixed
+     */
+    public function archiveContent()
+    {
+        $new = (new static )->newQueryWithoutScope(new ContentPublishingScope())->archive($this->id);
+        return $this->setRawAttributes($new->attributesToArray());
+    }
+
+    /**
+     * Determine if the model instance has been drafted.
      *
      * @return bool
      */
-    public function isApproved()
+    public function isDrafted()
     {
-        return $this->{$this->getStatusColumn()} == Status::APPROVED;
+        return $this->{$this->getStatusColumn()} == Status::DRAFTED;
     }
 
     /**
-     * Determine if the model instance has been approved.
+     * Determine if the model instance has been submitted to publisher for approval.
+     *
+     * @return bool
+     */
+    public function isSubmitted()
+    {
+        return $this->{$this->getStatusColumn()} == Status::SUBMITTED;
+    }
+
+    /**
+     * Determine if the model instance has been rejected by a publisher.
      *
      * @return bool
      */
@@ -117,23 +138,33 @@ trait PublishableContent
     }
 
     /**
-     * Determine if the model instance has been postponed.
+     * Determine if the model instance has been approved by a publisher.
      *
      * @return bool
      */
-    public function isPostponed()
+    public function isApproved()
     {
-        return $this->{$this->getStatusColumn()} == Status::POSTPONED;
+        return $this->{$this->getStatusColumn()} == Status::APPROVED;
     }
 
     /**
-     * Determine if the model instance has been approved.
+     * Determine if the model instance has been published.
      *
      * @return bool
      */
-    public function isPending()
+    public function isPublished()
     {
-        return $this->{$this->getStatusColumn()} == Status::PENDING;
+        return $this->{$this->getStatusColumn()} == Status::PUBLISHED;
+    }
+
+    /**
+     * Determine if the model instance has been published.
+     *
+     * @return bool
+     */
+    public function isArchived()
+    {
+        return $this->{$this->getStatusColumn()} == Status::ARCHIVED;
     }
 
     /**
@@ -143,7 +174,7 @@ trait PublishableContent
      */
     public function getStatusColumn()
     {
-        return defined('static::MODERATION_STATUS') ? static::MODERATION_STATUS : config('moderation.status_column');
+        return defined('static::CONTENT_PUBLISHING_STATUS') ? static::CONTENT_PUBLISHING_STATUS : config('bizly.content-publishing.status_column');
     }
 
     /**
@@ -157,53 +188,53 @@ trait PublishableContent
     }
 
     /**
-     * Get the fully qualified "moderated at" column.
+     * Get the fully qualified "published at" column.
      *
      * @return string
      */
-    public function getQualifiedModeratedAtColumn()
+    public function getQualifiedPublishedAtColumn()
     {
-        return $this->getTable() . '.' . $this->getModeratedAtColumn();
+        return $this->getTable() . '.' . $this->getPublishedAtColumn();
     }
 
     /**
-     * Get the fully qualified "moderated by" column.
+     * Get the fully qualified "published by" column.
      *
      * @return string
      */
-    public function getQualifiedModeratedByColumn()
+    public function getQualifiedPublishedByColumn()
     {
-        return $this->getTable() . '.' . $this->getModeratedByColumn();
+        return $this->getTable() . '.' . $this->getPublishedByColumn();
     }
 
     /**
-     * Get the name of the "moderated at" column.
+     * Get the name of the "published at" column.
      *
      * @return string
      */
-    public function getModeratedAtColumn()
+    public function getPublishedAtColumn()
     {
-        return defined('static::MODERATED_AT') ? static::MODERATED_AT : config('moderation.moderated_at_column');
+        return defined('static::PUBLISHED_AT') ? static::PUBLISHED_AT : config('bizly.content-publishing.published_at_column');
     }
 
     /**
-     * Get the name of the "moderated by" column.
+     * Get the name of the "published by" column.
      *
      * @return string
      */
-    public function getModeratedByColumn()
+    public function getPublishedByColumn()
     {
-        return defined('static::MODERATED_BY') ? static::MODERATED_BY : config('moderation.moderated_by_column');
+        return defined('static::PUBLISHED_BY') ? static::PUBLISHED_BY : config('bizly.content-publishing.published_by_column');
     }
 
     /**
-     * Get the name of the "moderated at" column.
-     * Append "moderated at" column to the attributes that should be converted to dates.
+     * Get the name of the "published at" column.
+     * Append "published at" column to the attributes that should be converted to dates.
      *
-     * @return string
+     * @return array
      */
     public function getDates()
     {
-        return array_merge(parent::getDates(), [$this->getModeratedAtColumn()]);
+        return array_merge(parent::getDates(), [$this->getPublishedAtColumn()]);
     }
 }

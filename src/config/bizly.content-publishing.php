@@ -23,11 +23,9 @@ return array(
 
     /*
     |--------------------------------------------------------------------------
-    | Strict Moderation
+    | Version column
     |--------------------------------------------------------------------------
-    | If Strict Moderation is set to true then the default query will return
-    | only approved resources.
-    | In other case, all resources except Rejected ones, will returned as well.
      */
-    'strict' => true,
+    'version_column' => 'version',
+
 );
