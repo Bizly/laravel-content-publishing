@@ -90,7 +90,7 @@ trait PublishableContent
      *
      * @return mixed
      */
-    public function publishContent($publish_at)
+    public function publishContent($publish_at = null)
     {
         $new = (new static )->newQueryWithoutScope(new ContentPublishingScope())->publish($this->id, $publish_at);
         return $this->setRawAttributes($new->attributesToArray());
