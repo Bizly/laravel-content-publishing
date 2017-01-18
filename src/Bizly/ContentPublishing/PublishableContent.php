@@ -1,4 +1,12 @@
 <?php
+/**
+ * trait PublishableContent
+ *
+ * @package    namespace Bizly\ContentPublishing;
+ * @version    1.0.0
+ * @author     Tor Miller
+ * @copyright  (c) 2015-2017, Bizly, Inc., All Rights Reserved
+ */
 
 namespace Bizly\ContentPublishing;
 

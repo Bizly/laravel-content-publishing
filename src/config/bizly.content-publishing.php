@@ -1,4 +1,13 @@
 <?php
+/**
+ * array config.bizly.content-publishing
+ *
+ * @package    laravel-content-publishing
+ * @version    1.0.0
+ * @author     Tor Miller
+ * @copyright  (c) 2015-2017, Bizly, Inc., All Rights Reserved
+ */
+
 return array(
     /*
     |--------------------------------------------------------------------------

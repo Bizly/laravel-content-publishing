@@ -1,4 +1,12 @@
 <?php
+/**
+ * class ContentPublishingScope
+ *
+ * @package    namespace Bizly\ContentPublishing;
+ * @version    1.0.0
+ * @author     Tor Miller
+ * @copyright  (c) 2015-2017, Bizly, Inc., All Rights Reserved
+ */
 
 namespace Bizly\ContentPublishing;
 
@@ -46,7 +54,7 @@ class ContentPublishingScope implements Scope
     {
         //Only return published resources by default:
         $builder->where($model->getQualifiedStatusColumn(), Status::PUBLISHED);
-
+        $builder->where($model->getQualifiedPublishedAtColumn(), '<=', Carbon::now());
         $this->extend($builder);
     }
 
