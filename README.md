@@ -2,10 +2,10 @@
 An Advanced Content Publishing System for Laravel 5.* that facitates content approval workflow.
 Based on the hootlex/laravel-moderation composer package.
 
-##Please Note:
+## Please Note:
 Future versions of this package will extend the polymorphic change/audit log with enhanced versioning and version restoration functionality.
 
-##Workflow Summary:
+## Workflow Summary:
 - 5 : DRAFTED : submit for approval (changes to PENDING) | publish, schedule to publish (changes to PUBLISHED, if scheduled sets specified publish date) | archive (changes state to ARCHIVED).
 - 4 : SUBMITTED : approve or reject (unused at the moment).
 - 3 : REJECTED : out-of-scope for now.
@@ -13,13 +13,13 @@ Future versions of this package will extend the polymorphic change/audit log wit
 - 1 : PUBLISHED : mark as draft | archive
 - 0 : ARCHIVED : publish | mark as draft
 
-###Methods for Publishable Class
+### Methods for Publishable Class
 - Class::create(User $user) : user creates content object. (we need both object information & user information to be passed.) 
 - $instance->publish(User $publisher/$author[if approved],$publish_at = now)
 - $instance->approve(User $publisher)
 - $instance->submitForApproval(User $author)
 
-##Required FK Relationship Tables:
+## Required FK Relationship Tables:
 - users (must have an integer id and an email field)
 - content_versions? (proposed)
     - id
@@ -35,18 +35,18 @@ Future versions of this package will extend the polymorphic change/audit log wit
     - would require a method for published objects to go-around if there are new minor versions with getting as an author or a publisher
 
 
-##User Roles??
+## User Roles??
 - reader default user role, can only consume published content after the `published_at` date has passed.
 - author 
 - publisher
 
-###Suggested Methods for User to Handle Permissions in your controller:
+### Suggested Methods for User to Handle Permissions in your controller:
 - `isAuthor($object_type,$object_id)` requires override in App's user class
 - `isPublisher($object_type[from class being published],$object_id)` 
 
 
 
-##Required Table Migration Fields to Implement:
+## Required Table Migration Fields to Implement:
 - status int(0,1,2,3,4,5)
 - content_version_id int(FK:content_versions.id)
 - created_by int(FK:users.id)
@@ -56,7 +56,7 @@ Future versions of this package will extend the polymorphic change/audit log wit
 - published_by int(FK:users.id)
 - published_at timestamp
 
-##Workflow Summary:
+## Workflow Summary:
 
 1. Author Creates a `publishableContent` resource which creates a draft version. Articles::all() returns only published articles.
 2. Author Updates a `publishableContent` resource which creates a minor draft version 2. 
@@ -71,7 +71,7 @@ Future versions of this package will extend the polymorphic change/audit log wit
   5. **Draft**: Default State
 
 
-##Installation
+## Installation
 
 First, install the package through Composer.
 
@@ -138,10 +138,10 @@ class AddContentPublishingColumnsToArticlesTable extends Migration
 }
 ```
 
-##Usage
+## Usage
 > **Note:** In next examples I will use Article model to demonstrate how the query builder works. You can Publish any Eloquent Model in your Laravel App.
 
-###Submit, Approve, and Publish Models
+### Submit, Approve, and Publish Models
 You can submit, approve, and publish a model Instance:
 ```php
 
@@ -228,9 +228,9 @@ $article->isSubmitted();
 
 ```
 
-##Configuration
+## Configuration
 
-###Global Configuration
+### Global Configuration
 To configure the Bizly Content Publishing package globally you have to edit `config/bizly.content-publishing.php`.
 Inside `bizly.content-publishing.php` you can configure the following:
 
@@ -239,7 +239,7 @@ Inside `bizly.content-publishing.php` you can configure the following:
 2. `approved_at_column` represents the default column `approved_at` in the database.
 2. `approved_by_column` represents the default column `approved_by` in the database.
 
-###Model Configuration
+### Model Configuration
 Inside your Model you can define some variables to overwrite **Global Settings**.
 
 To overwrite `status` column define:
